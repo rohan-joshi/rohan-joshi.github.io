@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <title>spring</title>
+  <meta charset="utf-8">
+  <meta property="og:type" content="website" />
+  <link rel="stylesheet" href="css/style_blog.css">
+  <style>
+    .axis {
+    font: 10px sans-serif;
+    }
+    .axis path,
+    .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+    }
+    img.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    }    
+  </style>
+</head>
+<body>
+  <div id="right">
+    Rohan Joshi
+    <ul>
+        <li><a href="/">Home</a>
+        <li><a href="frankl.html">Frankl</a>
+        <li><a href="emerson.html">Emerson</a>
+        <li><a href="poli.html">Poli</a>
+        <li><a href="momdad.html">Mom&Dad</a>
+        <li><a href="spring.html">Spring</a>
+    </ul>
+  </div>
+  <div id="container">
+    <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://rohan-joshi.github.io/momdad.html" data-text="Mom&Dad" data-via="rohansjoshi" data-count="none">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+  <h1>Spring</h1>
+  <p>The sun feels warm. Spring is here, the days are longer, the nights are shorter. I find myself sometimes wondering where you are, how you spend your days, and who you spend them with.</p>
+  <p>While it doesn't hurt as much anymore some days I still get lost and I like to imagine that you do too. I know that there's so much more out there. I can't seem to find my place in it all and sometimes I still dream in the colors of us.</p>
+  <p>I've become a morning person, I wake early in the darkness now even before the birds. I'm not sure i'll ever see you again but I wanted to thank you. The greatest gift you ever gave me were the words you never said.</p>
+  <p>If you should ever find yourself alone with the light pressed heavy against your chest, remember me.</p>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-64575479-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
