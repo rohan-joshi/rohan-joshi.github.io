@@ -1,0 +1,187 @@
+---
+interface Photo {
+  id: number;
+  src: string;
+  caption: string;
+}
+
+interface Props {
+  photos: Photo[];
+  year: string;
+}
+
+const { photos, year } = Astro.props;
+---
+
+<div class="gallery-container">
+
+  <!-- Gallery Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-16">
+    {photos.map((photo) => (
+      <a
+        href={`#lightbox-${photo.id}`}
+        class="group relative overflow-hidden rounded-lg bg-gray-100 aspect-square hover:shadow-xl transition-shadow duration-300"
+      >
+        <img
+          src={photo.src}
+          alt={photo.caption}
+          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+          <div class="text-white text-sm font-medium">{photo.caption}</div>
+        </div>
+      </a>
+    ))}
+  </div>
+
+  <!-- Lightbox Containers -->
+  {photos.map((photo, index) => {
+    const prevId = index === 0 ? photos.length : index;
+    const nextId = index === photos.length - 1 ? 1 : index + 2;
+
+    return (
+      <div id={`lightbox-${photo.id}`} class="lightbox">
+        <a href="#" class="close">&times;</a>
+        <a href={`#lightbox-${prevId}`} class="prev">&lsaquo;</a>
+        <a href={`#lightbox-${nextId}`} class="next">&rsaquo;</a>
+        <div class="lightbox-counter">{photo.id} / {photos.length}</div>
+        <img src={photo.src} alt={photo.caption} class="lightbox-image" />
+        <div class="lightbox-caption">{photo.caption}</div>
+      </div>
+    );
+  })}
+</div>
+
+<style>
+  /* Lightbox Styles */
+  .lightbox {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.95);
+    overflow: auto;
+  }
+
+  .lightbox:target {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .lightbox-image {
+    max-width: 90%;
+    max-height: 85vh;
+    object-fit: contain;
+    margin: auto;
+  }
+
+  .lightbox-caption {
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    font-size: 1.125rem;
+  }
+
+  .lightbox-counter {
+    position: absolute;
+    top: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 1rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+  }
+
+  .close, .prev, .next {
+    position: absolute;
+    color: white;
+    font-size: 3rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: opacity 0.3s;
+    cursor: pointer;
+    user-select: none;
+    background-color: rgba(0, 0, 0, 0.5);
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+  }
+
+  .close {
+    top: 1.5rem;
+    right: 2rem;
+  }
+
+  .prev {
+    left: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .next {
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .close:hover, .prev:hover, .next:hover {
+    opacity: 0.7;
+  }
+
+  @media (max-width: 768px) {
+    .close, .prev, .next {
+      font-size: 2rem;
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .close {
+      top: 1rem;
+      right: 1rem;
+    }
+
+    .prev {
+      left: 1rem;
+    }
+
+    .next {
+      right: 1rem;
+    }
+  }
+</style>
+
+<script>
+  // Keyboard navigation for lightbox
+  document.addEventListener('keydown', function(event) {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#lightbox-')) return;
+
+    const currentLightbox = document.querySelector(hash);
+    if (!currentLightbox) return;
+
+    switch(event.key) {
+      case 'ArrowLeft':
+        const prevLink = currentLightbox.querySelector('.prev');
+        if (prevLink) (prevLink as HTMLAnchorElement).click();
+        break;
+      case 'ArrowRight':
+        const nextLink = currentLightbox.querySelector('.next');
+        if (nextLink) (nextLink as HTMLAnchorElement).click();
+        break;
+      case 'Escape':
+        const closeLink = currentLightbox.querySelector('.close');
+        if (closeLink) (closeLink as HTMLAnchorElement).click();
+        break;
+    }
+  });
+</script>

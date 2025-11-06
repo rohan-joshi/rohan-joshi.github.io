@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Random profile image selection
+const profileImage = `rohan_${Math.floor(Math.random() * 2)}.png`;
+---
+
+<BaseLayout title="Rohan Joshi" activeNav="Home">
+  <!-- Header Section -->
+  <div class="mb-12">
+    <div class="flex items-start gap-5 mb-6">
+      <img
+        id="rohan"
+        src={`/${profileImage}`}
+        alt="Rohan Joshi"
+        class="w-20 h-20 rounded-lg object-cover"
+      />
+    </div>
+
+    <div class="space-y-5 text-gray-600 leading-relaxed">
+      <p>
+        I live in Brooklyn and work on data stuff at <a href="https://github.com/cockroachdb/cockroach" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">Cockroach Labs</a>. Before that, more developer tooling at <a href="https://imply.io" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">Imply</a>.
+        I spent four years prior at <a href="https://blend.com" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">Blend</a> working in a place that asked for my best and helped me get there.
+        Previously, I worked on marketplace optimization, data engineering, and portfolio analytics at <a href="http://www.lendingClub.com" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">Lending Club</a> and
+        in a previous life at <a href="http://www.Xignite.com" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">Xignite</a>.
+        Studied maths and statistics at the <a href="http://www.lsa.umich.edu/math/undergrad/majorandminorprograms/infinmajorprograms/mathematicsoffinanceandriskmanagement" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">University of Michigan</a>.
+      </p>
+
+      <p>
+        I'm interested in art, people, and society and would love to hear from others — please feel free to contact me directly at{' '}
+        <a href="mailto:rohanjoshi.ft@gmail.com" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">rohanjoshi.ft@gmail.com</a>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Interpolation Section -->
+  <section class="mb-12">
+    <h2 class="text-base font-normal mb-4 text-gray-700">Interpolation</h2>
+    <ul class="list-none space-y-1 text-gray-600">
+      <li>
+        <a href="https://500px.com/rohanjoshift" class="text-gray-700 hover:text-gray-900 underline decoration-gray-400 underline-offset-2 transition-colors duration-200">Photography</a>
+      </li>
+    </ul>
+  </section>
+</BaseLayout>
+
+<script is:inline>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-64575479-1', 'auto');
+  ga('send', 'pageview');
+</script>

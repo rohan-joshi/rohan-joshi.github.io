@@ -1,0 +1,28 @@
+---
+title: "On the nature of people"
+description: "Reflections on obsession, people, and finding wholeness"
+---
+
+For most of my life I've been abandoning my own mind to disappear into one obsession or another. When I was 11 years old I became fixated on calculators. I proceeded to spend every waking moment of that fall reading forums where people discussed modifying and programming these little devils of metal and plastic. Then I got bored of calculators and moved onto learning everything I could about graphics cards. Over the years, I've been obsessed with pretty much every category of thing you can imagine: people, food, places, projects, books. I don't choose my obsessions so much as stumble into their open arms.
+
+Recently, I've become interested in the line between obsession and passion. To me, they appear externally similar but are distinct from each other. Obsession is repetitive; passion feels generative. Obsession is a way to redirect desire, to avoid the intensity of your emotions by channeling them into something else. Passion is a way for you to integrate what you feel. Obsession is often used as a mechanism for control: it's unsettling how many people have disordered relationships with food, how common it is for someone to be obsessed with a romantic partner. We obsess as a way of mastering our desire.
+
+I believe that I'm obsessive because I'm acutely sensitive. In a place like San Francisco, the way I am is a rule, not an exception: my friends are insanely obsessive people. And there are, of course, rewards for obsession: you learn fast, you pursue your goals with a kind of berserk monomania. People praise you for your dedication. It is seen as an explicitly good thing, to care about nothing as much as you care about your startup, to work 16 hours a day for years and years. To be alone with the tech gods, riding life straight to perfect laughter.
+
+There's no denying brokenness is generative: obsession has shaped me and fed me and formed so much of who I am. But it has gotten to a point where I don't want to be so binary anymore. I want to learn how to manage obsession: to be attached to things and not have them destroy me. I want to learn how to believe that joy is not concentrated but diffuse, that it's in the air around me already. That what I have is what I need. I want to learn to live at the center of myself.
+
+Giving up obsession has meant that I've had to be willing to feel hunger and pain. To recognize my unmet needs. To realize that no piece of clothing, no thing, no girlfriend, no job, can really make me feel better about myself. And thus I can now inquire: what *can* make me feel better?
+
+I've been telling some friends lately that the three most lucrative things you can be obsessed with are people, technology and money. You can be *interested* in all three, but you can really only be truly obsessed with one. For me, it's always been people.
+
+When I was a kid I could barely talk to anyone, so I spent all my time reading. But looking back I think my love of books stemmed not from a love of language, but from an interest in other people's interiority. I wanted to know what other people experienced, and what they felt, and how they thought. And fiction was (still is) the best way to investigate that.
+
+As time goes on, I've asked myself more and more why I'm so interested in people. As in: what do I actually want from them? I think when I was younger I wanted to understand them because I felt alone and wanted to be loved. Now, I feel more and more that if you're trying to *get* something from another person, you're already fucking up.
+
+In the last month I've had the fortune of traveling cross-country. Staying (oftentimes on short notice) with (ex)coworkers, college friends, and new kind-hearted humans as I pinballed my way back to the east coast on what has felt like a semi-permanent move. Montana and Wisconsin were highlights though I'm guessing if you're reading this you're already familiar with that storyline. Some of the best people I've had the pleasure of meeting, a different slice of life that felt familiar in many ways.
+
+If there's anything that I've absorbed it's that what people offer, in and of themselves, is the chance to get out of your own skin. Their existence is both a consolation and a source of hope for me. I am often reasssured by the ordinariness of my own experience. That I am not unique. That every thought and feeling I have ever had has already been experienced by lots of other people. And it's comforting knowing that these experiences were and are immensely relatable. It was through a lot of these interactions that I noticed a metaphysical shift in my world. No longer did I feel atomized.
+
+I don't think there's anything more meaningful than realizing that your experience is the human experience, that what happens in your own head is only a fraction of the whole. That the whole _exists_. I think the awareness of that whole is the opposite of the nihilism that suffuses Western culture today. The way I used to relate to people was so much about completion, about craving. I didn't understand that you can never get enough of something you don't really need. If you're blind to the wholeness that's already present, you'll never find it in other people. When you see it you'll see it in everyone.
+
+To my friends -both old and new- that have been kind enough to lend me an ear over the last four months, gift me a good night's rest, and bless me with your company - thank you.

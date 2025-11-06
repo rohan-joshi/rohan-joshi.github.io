@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const essays = await getCollection('essays');
+  return essays.map((essay) => ({
+    params: { essay: essay.slug },
+    props: { essay },
+  }));
+}
+
+const { essay } = Astro.props;
+const { Content } = await essay.render();
+
+// Map essay slug to nav label
+const navMap: Record<string, string> = {
+  frankl: 'Frankl',
+  people: 'People',
+  emerson: 'Emerson',
+  poli: 'Poli',
+  momdad: 'Mom&Dad',
+  spring: 'Spring',
+};
+---
+
+<BaseLayout title={essay.data.title} activeNav={navMap[essay.slug]}>
+  <article class="prose prose-lg max-w-none">
+    <h1 class="text-3xl font-normal mb-8 text-gray-800">{essay.data.title}</h1>
+
+    <div class="essay-content text-gray-600 leading-relaxed space-y-5">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<script is:inline>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-64575479-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+<style>
+  .essay-content :global(p) {
+    margin-bottom: 1.25rem;
+  }
+
+  .essay-content :global(ul) {
+    list-style-type: disc;
+    margin-left: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .essay-content :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  .essay-content :global(a) {
+    color: #57534e;
+    text-decoration: underline;
+    text-decoration-color: #d6d3d1;
+    text-underline-offset: 2px;
+    transition: all 0.2s ease;
+  }
+
+  .essay-content :global(a:hover) {
+    color: #1c1917;
+    text-decoration-color: #78716c;
+  }
+
+  .essay-content :global(em) {
+    font-style: italic;
+  }
+
+  .essay-content :global(strong) {
+    font-weight: 500;
+    color: #44403c;
+  }
+</style>

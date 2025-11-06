@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PhotoGallery from '../../components/PhotoGallery.astro';
+
+const photos = [
+  { id: 1, src: '/2022/p1.tif', caption: '"wfh"' },
+  { id: 2, src: '/2022/p2.jpeg', caption: 'dydo, nj' },
+  { id: 3, src: '/2022/p3.jpg', caption: 'shag, zebra print, chelsea' },
+  { id: 4, src: '/2022/p4.jpg', caption: 'justin, ethan, midtown' },
+  { id: 5, src: '/2022/p5.jpg', caption: 'ian, bronx' },
+  { id: 6, src: '/2022/p6.jpg', caption: 'whitney, chelsea' },
+  { id: 7, src: '/2022/p7.jpg', caption: 'ald, gus, e' },
+  { id: 8, src: '/2022/p8.jpg', caption: 'ues' },
+  { id: 9, src: '/2022/p9.jpg', caption: 'rob, vinay, gus' },
+  { id: 10, src: '/2022/p10.jpg', caption: 'robert' },
+  { id: 11, src: '/2022/p11.jpg', caption: 'roberta' },
+  { id: 12, src: '/2022/p12.jpg', caption: 'gc' },
+  { id: 13, src: '/2022/p13.jpg', caption: 'i80' },
+  { id: 14, src: '/2022/p14.jpg', caption: 'the johnstons' },
+  { id: 15, src: '/2022/p15.jpg', caption: 'montana, i think' },
+  { id: 16, src: '/2022/p16.jpg', caption: 'glacier' },
+  { id: 17, src: '/2022/p17.jpg', caption: 'glacier' },
+  { id: 18, src: '/2022/p18.jpg', caption: 'somewhere, south dakota' },
+  { id: 19, src: '/2022/p19.jpg', caption: 'the schwaders' },
+  { id: 20, src: '/2022/p20.jpg', caption: 'howard, sd' },
+  { id: 21, src: '/2022/p21.jpg', caption: 'new friends :)' },
+  { id: 22, src: '/2022/p22.jpg', caption: 'green lake, wi' },
+  { id: 23, src: '/2022/p23.jpg', caption: 'john, haley, michigan' },
+];
+---
+
+<BaseLayout title="Photos 2022 | Rohan Joshi" activeNav="2022">
+  <PhotoGallery photos={photos} year="2022" />
+</BaseLayout>
+
+<script is:inline>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-64575479-1', 'auto');
+  ga('send', 'pageview');
+</script>
