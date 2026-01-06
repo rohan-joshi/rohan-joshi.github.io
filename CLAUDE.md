@@ -1,35 +1,45 @@
-# Personal Website Development Guide
+# CLAUDE.md
 
-## Serving the Site
-- Test locally: `python -m http.server 8000` (view at http://localhost:8000)
-- Deploy: Push changes to main branch (GitHub Pages will auto-deploy)
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Code Style Guidelines
+## Architecture
 
-### HTML
-- Indent with 2 spaces
-- Keep HTML files in root directory
-- Use lowercase for tag names and attributes
-- Close all tags properly (including self-closing tags)
-- Use semantic HTML elements where appropriate
+Plain static HTML site (Patrick Collison style):
+- Root-level `.html` files
+- Single CSS file at `/static/style.css`
+- Right-floated nav menu, left-floated content
+- No build step, no framework
 
-### CSS
-- Store CSS files in the `/css` directory
-- Use consistent class/ID naming (descriptive, lowercase with hyphens)
-- Indent with 4 spaces in CSS files
-- Group related properties together
-- Use grid/flex layouts for modern page structure
+Pages:
+- `index.html` - About page
+- `blog.html` - Blog listing with dates
+- `photos.html` - Photos index
+- `photos_2022.html` - 2022 photo gallery with lightbox
+- Essay files: `people.html`, `poli.html`, `momdad.html`, `spring.html`, `frankl.html`, `emerson.html`
 
-### JavaScript
-- Inline JS only for small functionality (like randomization)
-- External analytics scripts at end of body
-- Avoid excessive DOM manipulation
+## Commands
 
-### Media
-- Store images in year-based directories (e.g., `/2022`)
-- Use appropriate image formats (JPG for photos, PNG for UI elements)
-- Optimize images for web before uploading
+```bash
+python -m http.server 8000  # Serve at localhost:8000
+```
 
-### General
-- Keep file names descriptive and lowercase with underscores
-- Test across browsers before deploying changes
+## Deployment
+
+Push to `master` triggers GitHub Actions (`.github/workflows/deploy.yml`) which deploys static files to GitHub Pages.
+
+## Adding Content
+
+New essay:
+1. Create `essay-name.html` using existing essay as template
+2. Add entry to `blog.html` with date
+
+New photos:
+1. Add images to year folder (e.g., `/2023/`)
+2. Create `photos_2023.html` with gallery
+3. Add link to `photos.html`
+
+## Style
+
+- Helvetica 13px, blue links (#0864c7)
+- HTML: 2-space indent
+- Filenames: lowercase with underscores

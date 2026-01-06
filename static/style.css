@@ -1,0 +1,99 @@
+body {
+  font-family: Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+#menu {
+  float: right;
+  margin-top: 30px;
+  margin-right: 20px;
+  text-align: right;
+  width: 150px;
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+
+#menu .title {
+}
+
+#menu ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+#menu li a {
+  display: inline-block;
+  color: #0864c7;
+}
+
+#left {
+  height: 1px;
+  float: left;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  width: 200px;
+  margin: 0;
+  padding: 0;
+}
+
+#content {
+  margin-top: 15px;
+  float: left;
+  width: 500px;
+}
+
+#content h1, #content h2, #content h3 {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  margin: 0;
+}
+
+#content h2 {
+  margin-top: 2em;
+}
+
+#content .byline {
+  font-size: 10px;
+  color: #aaa;
+}
+
+#content .byline a {
+  color: #aaa;
+}
+
+#content p, #content ul {
+  color: #333;
+  line-height: 18px;
+}
+
+#content p.notop {
+  margin-top: 0;
+}
+
+#content li {
+  margin-bottom: 0.7em;
+}
+
+#content img {
+  max-width: 100%;
+}
+
+.post + .post {
+  margin-top: 50px;
+}
+
+.blog-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.blog-list li {
+  margin-bottom: 0.5em;
+}
+
+.blog-list .date {
+  color: #aaa;
+  font-size: 11px;
+  margin-right: 1em;
+}
