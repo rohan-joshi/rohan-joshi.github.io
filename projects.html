@@ -17,6 +17,179 @@
 <div id="left">&nbsp;</div>
 <div id="content">
 
+<div class="post" id="llm-sql-migration">
+<h1>Building an LLM-Powered SQL Migration Tool</h1>
+<span class="byline">2025-01-06 <a href="#llm-sql-migration">permalink</a></span>
+
+<p>Database migrations are painful. Schema conversion is mostly mechanical: type mappings, constraint syntax. Stored procedures are different. They're business logic in proprietary dialects: Oracle's PL/SQL, SQL Server's T-SQL, PostgreSQL's PL/pgSQL. Each has its own control flow, error handling, and weird edge cases.</p>
+
+<p>I spent a few months building a tool that uses Claude to convert procedural SQL between databases. This is what I learned about where the complexity actually is.</p>
+
+<h2>The Problem</h2>
+
+<p>A typical Oracle function you might need to migrate:</p>
+
+<pre>
+CREATE FUNCTION get_employee_bonus(
+    emp_id NUMBER,
+    fiscal_year NUMBER
+) RETURN NUMBER AS
+    v_salary NUMBER;
+    v_performance VARCHAR2(20);
+    v_bonus NUMBER := 0;
+BEGIN
+    SELECT salary, performance_rating
+    INTO v_salary, v_performance
+    FROM employees
+    WHERE employee_id = emp_id;
+
+    IF v_performance = 'EXCEEDS' THEN
+        v_bonus := v_salary * 0.15;
+    ELSIF v_performance = 'MEETS' THEN
+        v_bonus := v_salary * 0.10;
+    ELSE
+        v_bonus := v_salary * 0.05;
+    END IF;
+
+    RETURN NVL(v_bonus, 0);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 0;
+END;
+</pre>
+
+<p>Oracle-specific types (<code>NUMBER</code>, <code>VARCHAR2</code>). PL/SQL control flow. Exception handling. The <code>NVL</code> function. All of it needs to change.</p>
+
+<h2>The Easy Part</h2>
+
+<p>The LLM call itself is trivial:</p>
+
+<pre>
+resp, err := client.Messages.Create(ctx, anthropic.MessageCreateParams{
+    Model: "claude-sonnet-4-20250514",
+    Messages: []anthropic.MessageParam{
+        {Role: "user", Content: "Convert this Oracle function to PostgreSQL: " + sql},
+    },
+})
+</pre>
+
+<p>Ten lines of code. Works maybe 40% of the time. When it fails: using features that don't exist, or subtly changing behavior in ways you wouldn't notice until production.</p>
+
+<p>The LLM can do the conversion. The hard part is everything else.</p>
+
+<h2>The Hard Parts</h2>
+
+<pre>
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Splitter  │────▶│  Classifier │────▶│   Context   │
+│             │     │             │     │   Builder   │
+└─────────────┘     └─────────────┘     └──────┬──────┘
+                                               │
+                    ┌──────────────────────────┘
+                    ▼
+              ┌───────────┐     ┌───────────┐     ┌───────────┐
+              │    LLM    │────▶│ Validator │────▶│  Output   │
+              │  Adapter  │     │           │     │           │
+              └─────┬─────┘     └─────┬─────┘     └───────────┘
+                    │                 │
+                    │    ┌────────────┘
+                    │    │ validation failed
+                    │    ▼
+              ┌─────┴────────┐
+              │ Retry Loop   │
+              │ + Learning   │
+              └──────────────┘
+</pre>
+
+<h3>1. Getting the context right</h3>
+
+<p>A generic prompt gets generic results. To get reliable conversions, you need to understand what you're converting before you convert it.</p>
+
+<p><b>Splitting</b>: Most files have multiple functions. Split into units so each gets its own context. Parse dialect-specific boundaries: Oracle's <code>END;</code>, T-SQL's <code>GO</code>, PostgreSQL's <code>$$</code> delimiters.</p>
+
+<p><b>Classification</b>: Different SQL patterns need different conversion strategies. Two axes:</p>
+
+<ul>
+  <li><i>Purity</i>: Side effects? Pure functions can sometimes become SQL expressions. Functions with INSERT/UPDATE/DELETE need careful handling.</li>
+  <li><i>Features</i>: Cursors need to become CTEs. Dynamic SQL often can't be converted. Exception handling translates differently per dialect.</li>
+</ul>
+
+<p>For the Oracle example, classification returns:</p>
+<pre>
+{
+  "purity": "read_only",
+  "features": ["has_exception_handling", "has_control_flow"],
+  "strategy": "plpgsql_function"
+}
+</pre>
+
+<p><b>Prompt construction</b>: Once you know what you're dealing with, build a prompt with:</p>
+<ul>
+  <li>Type mappings baked in (<code>NUMBER</code> → <code>DECIMAL</code>, <code>NVL</code> → <code>COALESCE</code>)</li>
+  <li>Feature-specific instructions (how to handle cursors, exceptions, etc.)</li>
+  <li>2-3 examples from a registry that match the detected features</li>
+</ul>
+
+<p>Few-shot beats zero-shot for anything syntax-sensitive. System prompt gets cached so you're not paying to re-process the same mappings for every function in a file.</p>
+
+<h3>2. Catching bad output</h3>
+
+<p>Most LLM tools generate plausible-looking output and ship it. Fine for a demo. Not fine for production.</p>
+
+<p><b>Static checks</b>: Regex for known anti-patterns before hitting the database. Did it use <code>BIGINT</code> instead of <code>INT8</code>? Did it use <code>SERIAL</code> (causes hotspots)? Did it try <code>EXECUTE IMMEDIATE</code> (doesn't exist)?</p>
+
+<p><b>Live validation</b>: Spin up a temp schema, try to create the function, see if it compiles. If the database accepts it, at least it's syntactically valid.</p>
+
+<p>Semantic validation (does it compute the same thing?) is harder to automate. I generate test cases for that separately.</p>
+
+<h3>3. Recovering from failures</h3>
+
+<p>When validation fails, you have information. Use it.</p>
+
+<p>First retry, include the error:</p>
+
+<pre>
+⚠️ PREVIOUS ATTEMPT FAILED
+Errors from previous conversion:
+- Line 12: PL/pgSQL feature not supported
+  Suggestion: Use LANGUAGE SQL instead of plpgsql
+</pre>
+
+<p>Second retry, escalate to explicit constraints:</p>
+
+<pre>
+🚨 CRITICAL: PREVIOUS ATTEMPTS FAILED
+You MUST:
+- DO NOT use LANGUAGE plpgsql
+- DO NOT use DECLARE blocks
+- USE LANGUAGE SQL only
+</pre>
+
+<p>All caps and explicit prohibitions. Not subtle, but it works. Recovers about 90% of first-attempt failures.</p>
+
+<h3>4. Learning across a batch</h3>
+
+<p>Functions in the same file tend to use the same patterns. If function 3 failed because cursors don't work, function 4 probably has cursors too.</p>
+
+<p>Track what works and what doesn't across units in a file, include that in subsequent prompts:</p>
+
+<p><i>"Previous conversions: read_only functions worked best with sql_function strategy (3 successes, 1 failure)."</i></p>
+
+<p>By the tenth function, first-attempt success rate goes from ~70% to ~85%. The model learns from its own mistakes. Not through fine-tuning, just through prompt context.</p>
+
+<h2>Numbers</h2>
+
+<ul>
+  <li>Naive prompting: ~40% first-attempt success</li>
+  <li>With classification + context: ~70%</li>
+  <li>With retry: ~90%</li>
+  <li>With cross-unit learning: first-attempt hits ~85% by function 10</li>
+  <li>Prompt caching: 80-90% cost reduction for batch jobs</li>
+</ul>
+
+<p><i>These patterns generalize. Linters, transpilers, refactoring tools: anything that transforms code benefits from the same loop. Classify, contextualize, generate, validate, learn.</i></p>
+</div>
+
 <div class="post" id="stock-screener">
 <h1>Building a Fundamentals-Driven Stock Screener</h1>
 <span class="byline">2026-01-04 <a href="#stock-screener">permalink</a></span>
