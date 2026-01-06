@@ -21,81 +21,67 @@
 <h1>Building a Fundamentals-Driven Stock Screener</h1>
 <span class="byline">2026-01-04 <a href="#stock-screener">permalink</a></span>
 
-<p>Most stock screeners are glorified spreadsheet filters. You set P/E < 15, dividend yield > 3%, and hope for the best. The problem is that cheap stocks are often cheap for a reason. Value investing isn't just about finding low multiples. It's about finding <i>quality</i> businesses trading below intrinsic value, with competent management and identifiable catalysts for re-rating.</p>
+<p>Most screeners are glorified spreadsheet filters. P/E < 15, yield > 3%, done. But cheap stocks are often cheap for good reason.</p>
 
-<p>The spark for this project came from reading <a href="https://www.cluseau.com/p/double-vision">Double Vision</a>, a piece about exploiting price discrepancies between share classes of the same company. Samsung preferred shares trading at a 24% discount to common, TSMC ADRs at a premium to local shares. The thesis is simple: structural inefficiencies exist because of index inclusion rules, passive investing mechanics, and liquidity preferences. The market isn't always efficient; sometimes you can get more bang for your buck by looking where others aren't.</p>
+<p>This project started after reading <a href="https://www.cluseau.com/p/double-vision">Double Vision</a> on share class arbitrage. Samsung prefs at 24% discount to common, TSMC ADRs at premium to local. Structural inefficiencies from index rules, passive flows, liquidity prefs. If these exist in share class arb, they exist in fundamental valuation too. Identical quality metrics, wildly different multiples. Sector misclassification, analyst neglect, headline risk.</p>
 
-<p>That idea stuck with me. If structural inefficiencies exist in share class arbitrage, they almost certainly exist in fundamental valuation too. Companies with identical quality metrics trade at wildly different multiples because of sector misclassification, neglect by analysts, or temporary headline risk. The question became: could you systematically surface these opportunities?</p>
+<p>Stack: Python 3.11, TimescaleDB, Polygon.io.</p>
 
-<p>This post walks through the architecture of a stock screening system designed around this philosophy: a four-factor framework that combines Value, Business Quality, Capital Allocation, and Catalysts into a single composite score. The stack is Python 3.11, TimescaleDB for time-series storage, and Polygon.io for market data.</p>
+<h2>Why existing screeners fail</h2>
 
-<h2>The problem with simple screeners</h2>
-
-<p>Traditional screeners fail in predictable ways. Value traps: low P/E stocks that stay low forever because the business is deteriorating. Static snapshots: no sense of trajectory. Is ROE improving or declining? Missing context: a 5% dividend yield means nothing if the company is diluting shareholders 10% annually. No confidence scoring: all metrics treated equally regardless of data quality.</p>
-
-<p>The goal was to build something smarter: a system that ingests raw financial data, calculates intrinsic value with confidence intervals, scores companies across multiple dimensions, and surfaces the top 30 opportunities with full audit trails.</p>
+<ul>
+  <li><b>Value traps</b>: Low P/E stays low because the business is deteriorating</li>
+  <li><b>Static snapshots</b>: No trajectory. ROE improving or declining?</li>
+  <li><b>Missing context</b>: 5% yield means nothing if diluting 10% annually</li>
+  <li><b>No confidence weighting</b>: All metrics treated equally regardless of data quality</li>
+</ul>
 
 <h2>Architecture</h2>
 
 <pre>
-Polygon.io API → Rate Limiter → Ingestion Pipeline → TimescaleDB
-                                                          ↓
-                                              Analysis Modules
-                                           (DCF, Quality, Catalysts)
-                                                          ↓
-                                              Composite Scoring
-                                                          ↓
-                                               Top 30 Ranked
+Polygon.io → Rate Limiter → Ingestion → TimescaleDB
+                                              ↓
+                                    DCF / Quality / Catalyst modules
+                                              ↓
+                                    Composite score + veto flags
+                                              ↓
+                                    Top 30 ranked
 </pre>
 
-<h3>Why TimescaleDB?</h3>
+<h3>TimescaleDB</h3>
 
-<p>Financial data is inherently time-series. You're constantly asking questions like "What was AAPL's FCF for the last 5 years?" or "Show me all stocks where ROE has improved for 3 consecutive quarters."</p>
-
-<p>TimescaleDB is PostgreSQL with a time-series extension. The key feature is <i>hypertables</i>. Tables that automatically partition by time. Our <code>daily_metrics</code> table stores OHLCV data plus fundamentals (P/E, P/B, ROE, FCF, etc.) for every ticker, every day. Without partitioning, this table would become a performance nightmare. With hypertables partitioned by month, queries stay fast even with millions of rows.</p>
+<p>Hypertables partition by time automatically. <code>daily_metrics</code> stores OHLCV + fundamentals for every ticker/day. Primary key <code>(ticker, date)</code> for efficient range queries.</p>
 
 <pre>
 SELECT create_hypertable('daily_metrics', 'date', chunk_time_interval => INTERVAL '1 month');
 </pre>
 
-<p>The composite primary key is <code>(ticker, date)</code>, which allows efficient lookups like "give me MSFT's metrics for the last 90 days" without scanning the entire table.</p>
+<h3>Rate limiting</h3>
 
-<h2>Rate limiting: token bucket algorithm</h2>
-
-<p>Polygon.io allows 1000 requests per minute. Naive approaches (sleeping 60ms between requests) waste burst capacity and make ingestion painfully slow.</p>
-
-<p>The solution is a token bucket rate limiter:</p>
+<p>Polygon allows 1000 req/min. Token bucket instead of naive sleep:</p>
 
 <pre>
 class RateLimiter:
-    def __init__(self, max_tokens: int = 1000, refill_rate: float = None):
-        self.max_tokens = max_tokens
-        self.refill_rate = refill_rate or (max_tokens / 60.0)  # 16.67/sec
+    def __init__(self, max_tokens=1000):
         self.tokens = float(max_tokens)
-        self.last_refill = time.time()
+        self.refill_rate = max_tokens / 60.0
         self._lock = asyncio.Lock()
 
-    async def acquire(self, tokens: int = 1):
+    async def acquire(self, n=1):
         async with self._lock:
-            while True:
-                now = time.time()
-                elapsed = now - self.last_refill
-                self.tokens = min(self.max_tokens, self.tokens + elapsed * self.refill_rate)
-                self.last_refill = now
-
-                if self.tokens >= tokens:
-                    self.tokens -= tokens
-                    return
-
-                wait_time = (tokens - self.tokens) / self.refill_rate
-                await asyncio.sleep(wait_time)
+            elapsed = time.time() - self.last_refill
+            self.tokens = min(self.max_tokens, self.tokens + elapsed * self.refill_rate)
+            if self.tokens >= n:
+                self.tokens -= n
+                return
+            await asyncio.sleep((n - self.tokens) / self.refill_rate)
 </pre>
 
-<p>This allows burst requests up to 1000, then refills at ~16.67 tokens/second. The async lock ensures thread safety without blocking the event loop. When tokens are depleted, it calculates the exact wait time rather than polling.</p>
+<p>Burst up to 1000, refill at 16.67/sec. Calculates exact wait time instead of polling.</p>
 
-<h2>Intrinsic value with confidence scoring</h2>
+<h2>DCF with confidence intervals</h2>
 
-<p>DCF models are notoriously sensitive to assumptions. A small change in growth rate or discount rate can swing the output by 50%. Rather than pretending precision we don't have, the system calculates a <i>confidence score</i> alongside every valuation.</p>
+<p>DCF is sensitive. Small Δ in growth rate swings output 50%. So every valuation gets a confidence score:</p>
 
 <pre>
 @dataclass
@@ -104,64 +90,76 @@ class IntrinsicValueResult:
     dcf_confidence: float  # 0-1
     relative_value: Optional[float]
     relative_confidence: float
-    consensus_value: Optional[float]
     margin_of_safety: Optional[float]
 </pre>
 
-<p>Confidence is penalized for: high FCF volatility (if free cash flow swings wildly year-to-year, the projection is less reliable), short history (less than 3 years of data means lower confidence), unrealistic growth rates (projecting 25% growth forever gets discounted), negative FCF in history (one bad year is okay; three is a pattern), and terminal value dominance (if >90% of DCF value comes from terminal value, the model is basically a guess).</p>
+<p>Confidence penalized for:</p>
+<ul>
+  <li>High FCF volatility</li>
+  <li>&lt;3 years history</li>
+  <li>Growth &gt;20% projected indefinitely</li>
+  <li>Negative FCF in 2+ years</li>
+  <li>Terminal value &gt;90% of total</li>
+</ul>
 
-<p>The final intrinsic value is a confidence-weighted average of DCF and relative valuation (sector median P/E × EPS). This prevents a shaky DCF estimate from dominating when relative valuation is more reliable.</p>
+<p>Final value = confidence-weighted avg of DCF and relative (sector median P/E × EPS).</p>
 
-<h2>The four-factor framework</h2>
+<h2>Scoring</h2>
 
-<p>Each stock is scored across four dimensions:</p>
+<p>Four factors, weighted sum:</p>
+<ul>
+  <li><b>Value (35%)</b>: P/E, P/B, EV/EBITDA vs sector peers</li>
+  <li><b>Quality (30%)</b>: ROE, margins, consistency</li>
+  <li><b>Capital allocation (20%)</b>: Buybacks, dividends, debt paydown, insider buying</li>
+  <li><b>Catalysts (15%)</b>: Earnings beats, insider clusters</li>
+</ul>
 
-<table>
-  <tr><th>Factor</th><th>Weight</th><th>What It Measures</th></tr>
-  <tr><td>Value</td><td>35%</td><td>Sector-relative valuation composite (P/E, P/B, EV/EBITDA vs peers)</td></tr>
-  <tr><td>Quality</td><td>30%</td><td>Business fundamentals (ROE, margins, consistency)</td></tr>
-  <tr><td>Capital Allocation</td><td>20%</td><td>Buybacks, dividends, debt paydown, insider buying</td></tr>
-  <tr><td>Catalysts</td><td>15%</td><td>Events that could trigger re-rating (earnings beats, insider clusters)</td></tr>
-</table>
-
-<p>Weights sum to 1.0 (enforced by dataclass validation). The composite score is a simple weighted sum, but the real value is in the threshold checks.</p>
-
-<h3>Avoiding value traps</h3>
-
-<p>Beyond the composite score, stocks must pass a series of gates:</p>
+<p>But the score alone isn't enough. Veto thresholds filter out:</p>
 
 <pre>
 @dataclass
-class ScoringThresholds:
-    min_value_score: float = 50.0
+class Thresholds:
     min_quality_score: float = 60.0
-    min_capital_allocation_score: float = 50.0
-    min_dollar_volume: float = 1_000_000  # Liquidity
+    min_dollar_volume: float = 1_000_000
     max_debt_to_equity: float = 3.0
-    min_momentum_score: float = 20.0  # Avoid falling knives
-    max_share_change_3y: float = 0.25  # Avoid diluters
+    min_momentum_score: float = 20.0  # no falling knives
+    max_share_dilution_3y: float = 0.25
     max_net_debt_to_ebitda: float = 4.0
 </pre>
 
-<p>A stock can have a high composite score but still fail if it's illiquid, highly leveraged, or has been diluting shareholders. The <code>value_trap_flags</code> field accumulates warnings like <code>"negative_momentum"</code>, <code>"dilution"</code>, <code>"high_leverage"</code> so you can see exactly why a stock was excluded.</p>
+<p>Stocks accumulate <code>value_trap_flags</code>: <code>"dilution"</code>, <code>"negative_momentum"</code>, <code>"high_leverage"</code>. These often matter more than the composite score.</p>
 
-<p>Momentum is treated as a <i>veto and tie-breaker</i>, not a core factor. Cheap stocks with terrible momentum tend to get cheaper. The system excludes the bottom quintile of momentum but doesn't chase high-flyers.</p>
+<p>Momentum is a veto, not a factor. Bottom quintile excluded. Not chasing high-flyers.</p>
 
-<h2>Lessons learned</h2>
+<h2>Data model</h2>
 
-<p><i>Confidence > Precision.</i> Financial models are approximations. Surfacing uncertainty explicitly (via confidence scores) is more valuable than pretending you have a precise answer.</p>
+<ul>
+  <li><code>tickers</code>: metadata, sector, shares outstanding</li>
+  <li><code>daily_metrics</code>: hypertable, OHLCV + 20 fundamental fields</li>
+  <li><code>insider_transactions</code>: Form 4, filtered to &gt;$100k purchases</li>
+  <li><code>dividends</code>: payment history, ex-dates, specials</li>
+  <li><code>buyback_programs</code>: authorized amounts</li>
+</ul>
 
-<p><i>Rate limiters are infrastructure.</i> The token bucket pattern appears everywhere: API clients, database connection pools, message queues. Implementing it once with proper async support saves time later.</p>
+<p>Insider clusters (multiple execs buying in short window) weighted higher than single purchases.</p>
 
-<p><i>Time-series databases are worth it.</i> You can hack time-series queries in regular Postgres with clever indexing. But hypertables, automatic partitioning, and time-series-aware query planning make TimescaleDB worth the complexity for financial data.</p>
+<h2>Lessons</h2>
 
-<p><i>Veto logic matters as much as scoring.</i> The threshold checks and value-trap flags often provide more insight than the composite score itself. A stock that fails on <code>dilution</code> and <code>negative_momentum</code> is a very different proposition than one that fails on <code>liquidity</code>.</p>
+<ul>
+  <li><b>Confidence > precision</b>. Surface uncertainty explicitly. Don't pretend you know the growth rate to 2 decimal places.</li>
+  <li><b>Token bucket is reusable infra</b>. Same pattern for API clients, DB pools, queues.</li>
+  <li><b>TimescaleDB worth it for financial data</b>. Hypertables, auto-partitioning, time-aware query planning.</li>
+  <li><b>Veto logic > scoring</b>. A stock failing on <code>dilution</code> + <code>negative_momentum</code> is different from one failing on <code>liquidity</code>.</li>
+</ul>
 
-<h2>What's next</h2>
+<h2>Next</h2>
 
-<p>The current system runs batch ingestion nightly. Future work includes real-time price updates via WebSocket, a backtesting engine to validate the four-factor model against historical returns, a frontend dashboard (React + TanStack Table) for interactive exploration, and an alert system for significant insider buying or catalyst triggers.</p>
-
-<p>The full codebase is modular: swap out Polygon.io for another data source, adjust the factor weights, add new signals. The goal was to build a foundation for systematic value investing that's transparent about its assumptions and honest about its uncertainty.</p>
+<ul>
+  <li>WebSocket for real-time prices</li>
+  <li>Backtest harness to validate factor weights</li>
+  <li>React dashboard with TanStack Table</li>
+  <li>Alerts on insider clusters</li>
+</ul>
 </div>
 
 <div class="post" id="stock-analysis-agent">
