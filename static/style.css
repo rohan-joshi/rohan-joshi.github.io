@@ -97,3 +97,33 @@ body {
   font-size: 11px;
   margin-right: 1em;
 }
+
+pre {
+  background: #f5f5f5;
+  padding: 10px;
+  overflow-x: auto;
+  font-size: 11px;
+  line-height: 1.4;
+  border: 1px solid #ddd;
+}
+
+code {
+  font-family: Menlo, Monaco, monospace;
+  font-size: 11px;
+}
+
+table {
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 1em 0;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+th {
+  background: #f5f5f5;
+}

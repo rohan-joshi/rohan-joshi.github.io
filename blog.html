@@ -16,6 +16,221 @@
 <div id="left">&nbsp;</div>
 <div id="content">
 
+<div class="post" id="on-langsmith-equity-prices">
+<h1>On LangSmith &amp; Equity Prices</h1>
+<span class="byline">2025-12-31 <a href="#on-langsmith-equity-prices">permalink</a></span>
+
+<p>Want to turn raw financial data into actionable insights? This tutorial shows how to build an AI agent that fetches stock data, analyzes it with Claude, and returns structured recommendations—with built-in evaluation.</p>
+
+<h2>What We're Building</h2>
+
+<pre><code>┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Polygon.io    │───▶│   LangChain      │───▶│   Structured    │
+│   API Tools     │    │   LCEL Chain     │    │   Analysis      │
+│                 │    │                  │    │                 │
+│ • Snapshot      │    │ 1. Gather data   │    │ • Key metrics   │
+│ • Aggregates    │    │ 2. Format prompt │    │ • Price trends  │
+│ • Company info  │    │ 3. Call Claude   │    │ • Risk factors  │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                       ┌──────────────────┐
+                       │   LangSmith      │
+                       │   Tracing + Eval │
+                       └──────────────────┘</code></pre>
+
+<h2>Step 1: Create LangChain Tools</h2>
+
+<p>LangChain's <code>@tool</code> decorator converts functions into tools the LLM understands. The docstring becomes the tool description:</p>
+
+<pre><code>from langchain.tools import tool
+
+@tool
+def get_stock_snapshot(ticker: str) -&gt; dict:
+    """Fetch current stock price, volume, and day's high/low."""
+    url = f"https://api.polygon.io/v2/snapshot/.../tickers/{ticker}"
+    data = requests.get(url, params={"apiKey": API_KEY}).json()
+
+    return {
+        "current_price": data["ticker"]["lastTrade"]["p"],
+        "volume": data["ticker"]["day"]["v"],
+        "day_high": data["ticker"]["day"]["h"],
+    }</code></pre>
+
+<p>We create three tools: snapshot (real-time), aggregates (30-day trends), and company details.</p>
+
+<h2>Step 2: Define Structured Output</h2>
+
+<p>Pydantic models ensure Claude returns consistent, typed responses instead of free-form text:</p>
+
+<pre><code>from pydantic import BaseModel, Field
+
+class StockAnalysis(BaseModel):
+    ticker: str = Field(description="Stock ticker symbol")
+    key_metrics: str = Field(description="Summary of key metrics")
+    price_trend: str = Field(description="Recent price trends")
+    risk_factors: str = Field(description="Key risks to consider")
+    overall_summary: str = Field(description="Brief summary")</code></pre>
+
+<h2>Step 3: Build the LCEL Chain</h2>
+
+<p>LangChain Expression Language (LCEL) lets you compose pipelines declaratively using the <code>|</code> operator:</p>
+
+<pre><code>from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_anthropic import ChatAnthropic
+
+# Initialize Claude
+llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0.1)
+structured_llm = llm.with_structured_output(StockAnalysis)
+
+# Build the chain
+chain = (
+    RunnablePassthrough()                    # Pass input through
+    | RunnableLambda(gather_stock_data)      # Fetch from Polygon
+    | analysis_prompt                         # Format for LLM
+    | structured_llm                          # Generate analysis
+)</code></pre>
+
+<p>The <code>gather_stock_data</code> function calls all three tools and flattens results for the prompt template.</p>
+
+<h2>Step 4: Craft the Prompt</h2>
+
+<p>The prompt injects real data and guides Claude's analysis:</p>
+
+<pre><code>analysis_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a stock analyst. Use actual numbers. Avoid speculation."),
+    ("user", """Analyze {ticker}:
+    - Price: ${current_price}, Volume: {volume:,}
+    - 30-day change: {price_change_pct}%
+    - Company: {company_name}, Market Cap: ${market_cap:,}
+
+    Provide key metrics, trends, and risk factors. Cite numbers."""),
+])</code></pre>
+
+<h2>Step 5: Set Up LangSmith Evaluation</h2>
+
+<p>LangSmith lets you create test datasets and run automated evaluations. Here's the flow:</p>
+
+<pre><code>┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│  Test Cases   │───▶│   Dataset     │───▶│  Evaluators   │
+│  (JSON file)  │    │  (LangSmith)  │    │  (Custom)     │
+└───────────────┘    └───────────────┘    └───────────────┘
+                                                  │
+        ┌─────────────────────────────────────────┘
+        ▼
+┌───────────────────────────────────────────────────────┐
+│  Evaluation Metrics:                                  │
+│  • expected_mentions: Does output mention key terms?  │
+│  • cites_numbers: Are $, %, specific figures cited?   │
+│  • risk_factors: Is risk section substantive?         │
+│  • hallucinations: Are numbers grounded in input?     │
+└───────────────────────────────────────────────────────┘</code></pre>
+
+<h2>Creating a Dataset</h2>
+
+<p>Upload test cases to LangSmith programmatically:</p>
+
+<pre><code>from langsmith import Client
+
+client = Client()
+dataset = client.create_dataset("stock-analysis-test")
+
+client.create_example(
+    inputs={"ticker": "AAPL", "analysis_type": "quick"},
+    outputs={
+        "expected_mentions": ["Apple", "market cap", "volume"],
+        "should_include_risk": True,
+    },
+    dataset_id=dataset.id,
+)</code></pre>
+
+<h2>Writing Custom Evaluators</h2>
+
+<p>Evaluators receive the run output and expected values, returning a score:</p>
+
+<pre><code>from langsmith.schemas import Run, Example
+
+def check_cites_numbers(run: Run, example: Example) -&gt; dict:
+    """Check if analysis cites specific numbers."""
+    text = str(run.outputs)
+
+    has_dollar = "$" in text
+    has_percent = "%" in text
+    has_numbers = len(re.findall(r"\d+", text)) &gt;= 3
+
+    score = 1.0 if (has_dollar and has_percent and has_numbers) else 0.0
+    return {"key": "cites_numbers", "score": score}</code></pre>
+
+<h2>Running Evaluation</h2>
+
+<p>Execute all evaluators against your dataset:</p>
+
+<pre><code>from langsmith.evaluation import evaluate
+
+results = evaluate(
+    lambda inputs: chain.invoke(inputs),
+    data="stock-analysis-test",
+    evaluators=[check_cites_numbers, check_hallucinations, ...],
+    experiment_prefix="stock-analysis-v1",
+)</code></pre>
+
+<p>Results appear in the LangSmith dashboard with per-evaluator scores, traces, and comparison across runs.</p>
+
+<h2>Usage</h2>
+
+<pre><code>export ANTHROPIC_API_KEY=sk-...
+export POLYGON_API_KEY=...
+python src/main.py --ticker NVDA</code></pre>
+
+<p>Output:</p>
+<pre><code>Ticker: NVDA
+Key Metrics: $142.50 current price, 48.2M volume, $3.5T market cap
+Price Trend: Up 12.3% over 30 days, testing resistance at $145
+Risk Factors: Elevated P/E ratio, AI spending concentration risk</code></pre>
+
+<h2>Key Concepts for LangChain Beginners</h2>
+
+<table>
+<tr><th>Concept</th><th>What It Does</th></tr>
+<tr><td><code>@tool</code></td><td>Makes functions callable by LLMs with auto-generated schemas</td></tr>
+<tr><td><code>ChatPromptTemplate</code></td><td>Structures messages with variable injection</td></tr>
+<tr><td><code>with_structured_output()</code></td><td>Forces LLM to return Pydantic models</td></tr>
+<tr><td>LCEL <code>|</code> operator</td><td>Chains components: input → transform → prompt → LLM</td></tr>
+<tr><td><code>RunnableLambda</code></td><td>Wraps any function as a chain component</td></tr>
+<tr><td>LangSmith <code>evaluate()</code></td><td>Runs test datasets through your chain with scoring</td></tr>
+</table>
+
+<h2>What's Next</h2>
+
+<ul>
+<li><b>Caching</b>: Add Redis to handle Polygon's 5 calls/min limit</li>
+<li><b>Parallel tools</b>: Fetch snapshot/aggregates/details concurrently</li>
+<li><b>News sentiment</b>: Integrate news API for qualitative signals</li>
+</ul>
+
+<h2>Sample LangSmith Evaluation Output</h2>
+
+<pre><code>Running evaluation on stock-analysis-test...
+
+Example 1/4: AAPL
+  ✅ expected_mentions: 1.0 (Found 3/3: Apple, market cap, volume)
+  ✅ cites_numbers: 1.0 (Found 12 numbers, $:True, %:True)
+  ✅ risk_factors: 1.0 (Risk factors included)
+  ✅ hallucinations: 0.95 (Matched 11/12 numbers)
+
+Example 2/4: TSLA
+  ✅ expected_mentions: 1.0 (Found 4/4: Tesla, volatility, volume, EV)
+  ✅ cites_numbers: 1.0 (Found 15 numbers, $:True, %:True)
+  ✅ risk_factors: 1.0 (Risk factors included)
+  ⚠️ hallucinations: 0.87 (2 numbers not found in input)
+
+Aggregate Scores:
+  expected_mentions: 0.94
+  cites_numbers: 1.0
+  risk_factors: 1.0
+  hallucinations: 0.91</code></pre>
+</div>
+
 <div class="post" id="on-people">
 <h1>On People</h1>
 <span class="byline">2022-07-15 <a href="#on-people">permalink</a></span>
