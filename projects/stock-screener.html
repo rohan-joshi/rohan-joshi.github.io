@@ -1,0 +1,166 @@
+<html>
+<head>
+  <link rel="stylesheet" href="/static/style.css">
+  <meta charset="utf-8">
+  <title>Building a Fundamentals-Driven Stock Screener · Rohan Joshi</title>
+</head>
+<body>
+<div id="menu">
+<span class="title">Rohan Joshi</span>
+<ul>
+  <li><a href="/">About</a></li>
+  <li><a href="/blog.html">Blog</a></li>
+  <li><a href="/projects.html">Projects</a></li>
+  <li><a href="/photos.html">Photos</a></li>
+</ul>
+</div>
+<div id="left">&nbsp;</div>
+<div id="content">
+
+<h1>Building a Fundamentals-Driven Stock Screener</h1>
+<span class="byline">2026-01-04</span>
+
+<p>Most screeners are glorified spreadsheet filters. P/E < 15, yield > 3%, done. But cheap stocks are often cheap for good reason.</p>
+
+<p>This project started after reading <a href="https://www.cluseau.com/p/double-vision">Double Vision</a> on share class arbitrage. Samsung prefs at 24% discount to common, TSMC ADRs at premium to local. Structural inefficiencies from index rules, passive flows, liquidity prefs. If these exist in share class arb, they exist in fundamental valuation too. Identical quality metrics, wildly different multiples. Sector misclassification, analyst neglect, headline risk.</p>
+
+<p>Stack: Python 3.11, TimescaleDB, Polygon.io.</p>
+
+<h2>Why existing screeners fail</h2>
+
+<ul>
+  <li><b>Value traps</b>: Low P/E stays low because the business is deteriorating</li>
+  <li><b>Static snapshots</b>: No trajectory. ROE improving or declining?</li>
+  <li><b>Missing context</b>: 5% yield means nothing if diluting 10% annually</li>
+  <li><b>No confidence weighting</b>: All metrics treated equally regardless of data quality</li>
+</ul>
+
+<h2>Architecture</h2>
+
+<pre>
+Polygon.io → Rate Limiter → Ingestion → TimescaleDB
+                                              ↓
+                                    DCF / Quality / Catalyst modules
+                                              ↓
+                                    Composite score + veto flags
+                                              ↓
+                                    Top 30 ranked
+</pre>
+
+<h3>TimescaleDB</h3>
+
+<p>Hypertables partition by time automatically. <code>daily_metrics</code> stores OHLCV + fundamentals for every ticker/day. Primary key <code>(ticker, date)</code> for efficient range queries.</p>
+
+<pre>
+SELECT create_hypertable('daily_metrics', 'date', chunk_time_interval => INTERVAL '1 month');
+</pre>
+
+<h3>Rate limiting</h3>
+
+<p>Polygon allows 1000 req/min. Token bucket instead of naive sleep:</p>
+
+<pre>
+class RateLimiter:
+    def __init__(self, max_tokens=1000):
+        self.tokens = float(max_tokens)
+        self.refill_rate = max_tokens / 60.0
+        self._lock = asyncio.Lock()
+
+    async def acquire(self, n=1):
+        async with self._lock:
+            elapsed = time.time() - self.last_refill
+            self.tokens = min(self.max_tokens, self.tokens + elapsed * self.refill_rate)
+            if self.tokens >= n:
+                self.tokens -= n
+                return
+            await asyncio.sleep((n - self.tokens) / self.refill_rate)
+</pre>
+
+<p>Burst up to 1000, refill at 16.67/sec. Calculates exact wait time instead of polling.</p>
+
+<h2>DCF with confidence intervals</h2>
+
+<p>DCF is sensitive. Small Δ in growth rate swings output 50%. So every valuation gets a confidence score:</p>
+
+<pre>
+@dataclass
+class IntrinsicValueResult:
+    dcf_value: Optional[float]
+    dcf_confidence: float  # 0-1
+    relative_value: Optional[float]
+    relative_confidence: float
+    margin_of_safety: Optional[float]
+</pre>
+
+<p>Confidence penalized for:</p>
+<ul>
+  <li>High FCF volatility</li>
+  <li>&lt;3 years history</li>
+  <li>Growth &gt;20% projected indefinitely</li>
+  <li>Negative FCF in 2+ years</li>
+  <li>Terminal value &gt;90% of total</li>
+</ul>
+
+<p>Final value = confidence-weighted avg of DCF and relative (sector median P/E × EPS).</p>
+
+<h2>Scoring</h2>
+
+<p>Four factors, weighted sum:</p>
+<ul>
+  <li><b>Value (35%)</b>: P/E, P/B, EV/EBITDA vs sector peers</li>
+  <li><b>Quality (30%)</b>: ROE, margins, consistency</li>
+  <li><b>Capital allocation (20%)</b>: Buybacks, dividends, debt paydown, insider buying</li>
+  <li><b>Catalysts (15%)</b>: Earnings beats, insider clusters</li>
+</ul>
+
+<p>But the score alone isn't enough. Veto thresholds filter out:</p>
+
+<pre>
+@dataclass
+class Thresholds:
+    min_quality_score: float = 60.0
+    min_dollar_volume: float = 1_000_000
+    max_debt_to_equity: float = 3.0
+    min_momentum_score: float = 20.0  # no falling knives
+    max_share_dilution_3y: float = 0.25
+    max_net_debt_to_ebitda: float = 4.0
+</pre>
+
+<p>Stocks accumulate <code>value_trap_flags</code>: <code>"dilution"</code>, <code>"negative_momentum"</code>, <code>"high_leverage"</code>. These often matter more than the composite score.</p>
+
+<p>Momentum is a veto, not a factor. Bottom quintile excluded. Not chasing high-flyers.</p>
+
+<h2>Data model</h2>
+
+<ul>
+  <li><code>tickers</code>: metadata, sector, shares outstanding</li>
+  <li><code>daily_metrics</code>: hypertable, OHLCV + 20 fundamental fields</li>
+  <li><code>insider_transactions</code>: Form 4, filtered to &gt;$100k purchases</li>
+  <li><code>dividends</code>: payment history, ex-dates, specials</li>
+  <li><code>buyback_programs</code>: authorized amounts</li>
+</ul>
+
+<p>Insider clusters (multiple execs buying in short window) weighted higher than single purchases.</p>
+
+<h2>Lessons</h2>
+
+<ul>
+  <li><b>Confidence > precision</b>. Surface uncertainty explicitly. Don't pretend you know the growth rate to 2 decimal places.</li>
+  <li><b>Token bucket is reusable infra</b>. Same pattern for API clients, DB pools, queues.</li>
+  <li><b>TimescaleDB worth it for financial data</b>. Hypertables, auto-partitioning, time-aware query planning.</li>
+  <li><b>Veto logic > scoring</b>. A stock failing on <code>dilution</code> + <code>negative_momentum</code> is different from one failing on <code>liquidity</code>.</li>
+</ul>
+
+</div>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-64575479-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</body>
+</html>

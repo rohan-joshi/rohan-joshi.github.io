@@ -1,0 +1,165 @@
+<html>
+<head>
+  <link rel="stylesheet" href="/static/style.css">
+  <meta charset="utf-8">
+  <title>Building a Stock Analysis Agent with LangChain · Rohan Joshi</title>
+</head>
+<body>
+<div id="menu">
+<span class="title">Rohan Joshi</span>
+<ul>
+  <li><a href="/">About</a></li>
+  <li><a href="/blog.html">Blog</a></li>
+  <li><a href="/projects.html">Projects</a></li>
+  <li><a href="/photos.html">Photos</a></li>
+</ul>
+</div>
+<div id="left">&nbsp;</div>
+<div id="content">
+
+<h1>Building a Stock Analysis Agent with LangChain</h1>
+<span class="byline">2025-12-31</span>
+
+<p>I wanted to build something that could pull stock data and actually say something useful about it. Not just "here's the price" but "here's what's interesting about this stock right now." The kind of summary a human analyst would write.</p>
+
+<p>The result: a LangChain agent that fetches data from Polygon.io, feeds it to Claude, and returns structured analysis. The interesting parts were getting LangChain's tooling to work smoothly and building evals to catch when the LLM hallucinates numbers.</p>
+
+<pre>
+Polygon.io ──▶ LangChain Tools ──▶ Claude ──▶ Structured Output
+     │                                              │
+     └──────────── LangSmith Tracing ───────────────┘
+</pre>
+
+<h2>The @tool decorator</h2>
+
+<p>LangChain's <code>@tool</code> decorator is the cleanest part of the framework. Slap it on a function, write a good docstring, and you've got an LLM-callable tool:</p>
+
+<pre>
+@tool
+def get_stock_snapshot(ticker: str) -> dict:
+    """Fetch current stock price, volume, and day's high/low."""
+    data = requests.get(f"https://api.polygon.io/v2/snapshot/.../tickers/{ticker}",
+                        params={"apiKey": API_KEY}).json()
+    return {
+        "current_price": data["ticker"]["lastTrade"]["p"],
+        "volume": data["ticker"]["day"]["v"],
+    }
+</pre>
+
+<p>I built three of these: one for real-time snapshots, one for 30-day aggregates, one for company info. The docstrings matter. They're what the LLM sees when deciding which tool to call.</p>
+
+<h2>Forcing structured output</h2>
+
+<p>The problem with just asking Claude "analyze this stock" is you get prose. Sometimes it mentions risk factors, sometimes it doesn't. Sometimes the format changes. Pain to parse.</p>
+
+<p>Pydantic fixes this:</p>
+
+<pre>
+class StockAnalysis(BaseModel):
+    ticker: str
+    key_metrics: str
+    price_trend: str
+    risk_factors: str
+    overall_summary: str
+</pre>
+
+<p>Then <code>llm.with_structured_output(StockAnalysis)</code> forces Claude to fill in every field. No more optional sections.</p>
+
+<h2>LCEL chains</h2>
+
+<p>LangChain Expression Language took me a bit to grok. The <code>|</code> operator pipes data through stages:</p>
+
+<pre>
+chain = (
+    RunnablePassthrough()
+    | RunnableLambda(gather_stock_data)  # calls all 3 Polygon tools
+    | analysis_prompt
+    | structured_llm
+)
+</pre>
+
+<p>One gotcha: prompt templates can't access nested dicts. So <code>gather_stock_data</code> has to flatten everything. <code>snapshot["day"]["high"]</code> becomes just <code>day_high</code>. Annoying but manageable.</p>
+
+<h2>The interesting part: evals</h2>
+
+<p>Here's what I actually spent most of my time on. It's easy to get a demo working. It's hard to know if it's <i>good</i>.</p>
+
+<p>LangSmith lets you define test cases and custom evaluators. My evaluators check:</p>
+
+<ul>
+  <li><b>Expected mentions</b>: Does the AAPL analysis actually mention "Apple"?</li>
+  <li><b>Cites numbers</b>: Are there dollar signs and percentages? (Surprisingly often, no)</li>
+  <li><b>Hallucination detection</b>: This one matters most</li>
+</ul>
+
+<p>The hallucination evaluator compares numbers in the output against numbers in the input. If Claude says "market cap of $2.8T" but the input said $2.5T, that's a flag.</p>
+
+<pre>
+def check_hallucinations(run: Run, example: Example) -> dict:
+    output_numbers = extract_numbers(str(run.outputs))
+    input_numbers = extract_numbers(str(run.inputs))
+
+    matched = [n for n in output_numbers if any(close_enough(n, i) for i in input_numbers)]
+    hallucination_rate = 1 - (len(matched) / len(output_numbers))
+
+    return {"key": "hallucinations", "score": 1 - hallucination_rate}
+</pre>
+
+<p>Running evals:</p>
+
+<pre>
+results = evaluate(
+    lambda inputs: chain.invoke(inputs),
+    data="stock-analysis-test",
+    evaluators=[check_cites_numbers, check_hallucinations, ...],
+)
+</pre>
+
+<p>Sample output:</p>
+
+<pre>
+Example 1/4: AAPL
+  ✅ expected_mentions: 1.0 (Found 3/3: Apple, market cap, volume)
+  ✅ cites_numbers: 1.0 (Found 12 numbers)
+  ✅ hallucinations: 0.95 (Matched 11/12 numbers)
+
+Example 2/4: TSLA
+  ⚠️ hallucinations: 0.87 (2 numbers not found in input)
+
+Aggregate: 0.91 hallucination score
+</pre>
+
+<p>That TSLA result is the kind of thing you only catch with evals. The analysis looked fine. The numbers were wrong.</p>
+
+<h2>Running it</h2>
+
+<pre>
+python src/main.py --ticker NVDA
+</pre>
+
+<pre>
+Ticker: NVDA
+Key Metrics: $142.50 current price, 48.2M volume, $3.5T market cap
+Price Trend: Up 12.3% over 30 days, testing resistance at $145
+Risk Factors: Elevated P/E ratio, AI spending concentration risk
+</pre>
+
+<h2>What I'd do differently</h2>
+
+<p>Polygon's free tier only allows 5 API calls/minute. Should've added Redis caching from the start. Also, the three tool calls run sequentially. They could be parallel since they're independent.</p>
+
+<p>The hallucination evaluator is crude. It just looks for number matches within 5% tolerance. A better version would understand that "nearly $3T" matching "$2.8T" is probably fine, but "$180 price target" appearing from nowhere is not.</p>
+
+</div>
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-64575479-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</body>
+</html>
