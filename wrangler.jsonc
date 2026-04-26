@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rohan-website",
+  "compatibility_date": "2026-04-26",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": ".",
+    "exclude": [
+      ".git/**",
+      ".wrangler/**",
+      ".env",
+      ".gitignore",
+      "node_modules/**",
+      "scripts/**",
+      "static/style.css.backup",
+      "package.json",
+      "package-lock.json",
+      "server.js",
+      "cancel.html",
+      "pay.html",
+      "return.html",
+      "CLAUDE.md",
+      "MIGRATION.md",
+      "README.md",
+      "wrangler.jsonc"
+    ]
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
