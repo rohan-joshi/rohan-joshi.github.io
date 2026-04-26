@@ -1,22 +1,14 @@
-<html>
+<html data-theme="light">
 <head>
-  <link rel="stylesheet" href="/static/style.css">
   <meta charset="utf-8">
   <title>Photos · Rohan Joshi</title>
-  <style>
-    .photo {
-      margin-bottom: 2em;
-    }
-    .photo img {
-      max-width: 100%;
-      display: block;
-    }
-    .photo .caption {
-      font-size: 11px;
-      color: #888;
-      margin-top: 0.5em;
-    }
-  </style>
+  <script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div id="menu">
@@ -27,139 +19,23 @@
   <li><a href="/projects.html">Projects</a></li>
   <li><a href="/photos.html">Photos</a></li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 </div>
 <div id="left">&nbsp;</div>
 <div id="content">
 
 <h1>Photos</h1>
 
-<h2>2022</h2>
-
-<div class="photo">
-  <a href="/2022/p1.tif" target="_blank"><img src="/2022/p1.tif" alt="wfh"></a>
-  <div class="caption">"wfh"</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p2.jpeg" target="_blank"><img src="/2022/p2.jpeg" alt="dydo, nj"></a>
-  <div class="caption">dydo, nj</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p3.jpg" target="_blank"><img src="/2022/p3.jpg" alt="shag, zebra print, chelsea"></a>
-  <div class="caption">shag, zebra print, chelsea</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p4.jpg" target="_blank"><img src="/2022/p4.jpg" alt="justin, ethan, midtown"></a>
-  <div class="caption">justin, ethan, midtown</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p5.jpg" target="_blank"><img src="/2022/p5.jpg" alt="ian, bronx"></a>
-  <div class="caption">ian, bronx</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p6.jpg" target="_blank"><img src="/2022/p6.jpg" alt="whitney, chelsea"></a>
-  <div class="caption">whitney, chelsea</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p7.jpg" target="_blank"><img src="/2022/p7.jpg" alt="ald, gus, e"></a>
-  <div class="caption">ald, gus, e</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p8.jpg" target="_blank"><img src="/2022/p8.jpg" alt="ues"></a>
-  <div class="caption">ues</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p9.jpg" target="_blank"><img src="/2022/p9.jpg" alt="rob, vinay, gus"></a>
-  <div class="caption">rob, vinay, gus</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p10.jpg" target="_blank"><img src="/2022/p10.jpg" alt="robert"></a>
-  <div class="caption">robert</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p11.jpg" target="_blank"><img src="/2022/p11.jpg" alt="roberta"></a>
-  <div class="caption">roberta</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p12.jpg" target="_blank"><img src="/2022/p12.jpg" alt="gc"></a>
-  <div class="caption">gc</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p13.jpg" target="_blank"><img src="/2022/p13.jpg" alt="i80"></a>
-  <div class="caption">i80</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p14.jpg" target="_blank"><img src="/2022/p14.jpg" alt="the johnstons"></a>
-  <div class="caption">the johnstons</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p15.jpg" target="_blank"><img src="/2022/p15.jpg" alt="montana, i think"></a>
-  <div class="caption">montana, i think</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p16.jpg" target="_blank"><img src="/2022/p16.jpg" alt="glacier"></a>
-  <div class="caption">glacier</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p17.jpg" target="_blank"><img src="/2022/p17.jpg" alt="glacier"></a>
-  <div class="caption">glacier</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p18.jpg" target="_blank"><img src="/2022/p18.jpg" alt="somewhere, south dakota"></a>
-  <div class="caption">somewhere, south dakota</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p19.jpg" target="_blank"><img src="/2022/p19.jpg" alt="the schwaders"></a>
-  <div class="caption">the schwaders</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p20.jpg" target="_blank"><img src="/2022/p20.jpg" alt="howard, sd"></a>
-  <div class="caption">howard, sd</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p21.jpg" target="_blank"><img src="/2022/p21.jpg" alt="new friends :)"></a>
-  <div class="caption">new friends :)</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p22.jpg" target="_blank"><img src="/2022/p22.jpg" alt="green lake, wi"></a>
-  <div class="caption">green lake, wi</div>
-</div>
-
-<div class="photo">
-  <a href="/2022/p23.jpg" target="_blank"><img src="/2022/p23.jpg" alt="john, haley, michigan"></a>
-  <div class="caption">john, haley, michigan</div>
-</div>
+<ul class="blog-list">
+  <li>
+    <span class="date">2022</span>
+    <a href="/photos/2022.html">film · road trip west · new york</a>
+  </li>
+</ul>
 
 </div>
-<script type="text/javascript">
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', 'UA-64575479-1']);
-  _gaq.push(['_trackPageview']);
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
-</script>
+<script src="/static/theme.js"></script>
 </body>
 </html>
