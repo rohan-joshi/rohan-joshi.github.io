@@ -121,9 +121,6 @@ resp, err := client.Messages.Create(ctx, anthropic.MessageCreateParams{
   <li><i>Purity</i>: Side effects? Pure functions can sometimes become SQL expressions. Functions with INSERT/UPDATE/DELETE need careful handling.</li>
   <li><i>Features</i>: Cursors need to become CTEs. Dynamic SQL often can't be converted. Exception handling translates differently per dialect.</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <p>For the Oracle example, classification returns:</p>
 <pre>
@@ -140,9 +137,6 @@ resp, err := client.Messages.Create(ctx, anthropic.MessageCreateParams{
   <li>Feature-specific instructions (how to handle cursors, exceptions, etc.)</li>
   <li>2-3 examples from a registry that match the detected features</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <p>Few-shot beats zero-shot for anything syntax-sensitive. System prompt gets cached so you're not paying to re-process the same mappings for every function in a file.</p>
 
@@ -200,9 +194,6 @@ You MUST:
   <li>With cross-unit learning: first-attempt hits ~85% by function 10</li>
   <li>Prompt caching: 80-90% cost reduction for batch jobs</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <p><i>These patterns generalize. Linters, transpilers, refactoring tools: anything that transforms code benefits from the same loop. Classify, contextualize, generate, validate, learn.</i></p>
 

@@ -43,9 +43,6 @@
   <li><b>Missing context</b>: 5% yield means nothing if diluting 10% annually</li>
   <li><b>No confidence weighting</b>: All metrics treated equally regardless of data quality</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <h2>Architecture</h2>
 
@@ -112,9 +109,6 @@ class IntrinsicValueResult:
   <li>Negative FCF in 2+ years</li>
   <li>Terminal value &gt;90% of total</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <p>Final value = confidence-weighted avg of DCF and relative (sector median P/E × EPS).</p>
 
@@ -127,9 +121,6 @@ class IntrinsicValueResult:
   <li><b>Capital allocation (20%)</b>: Buybacks, dividends, debt paydown, insider buying</li>
   <li><b>Catalysts (15%)</b>: Earnings beats, insider clusters</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <p>But the score alone isn't enough. Veto thresholds filter out:</p>
 
@@ -157,9 +148,6 @@ class Thresholds:
   <li><code>dividends</code>: payment history, ex-dates, specials</li>
   <li><code>buyback_programs</code>: authorized amounts</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 <p>Insider clusters (multiple execs buying in short window) weighted higher than single purchases.</p>
 
@@ -171,9 +159,6 @@ class Thresholds:
   <li><b>TimescaleDB worth it for financial data</b>. Hypertables, auto-partitioning, time-aware query planning.</li>
   <li><b>Veto logic > scoring</b>. A stock failing on <code>dilution</code> + <code>negative_momentum</code> is different from one failing on <code>liquidity</code>.</li>
 </ul>
-<button id="theme-toggle" aria-label="Toggle dark mode">
-  <span class="theme-icon">☾</span>
-</button>
 
 </div>
 <script src="/static/theme.js"></script>
