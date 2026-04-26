@@ -1,8 +1,14 @@
-<html>
+<html data-theme="light">
 <head>
-  <link rel="stylesheet" href="/static/style.css">
   <meta charset="utf-8">
   <title>Projects · Rohan Joshi</title>
+  <script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div id="menu">
@@ -13,6 +19,9 @@
   <li><a href="/projects.html">Projects</a></li>
   <li><a href="/photos.html">Photos</a></li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 </div>
 <div id="left">&nbsp;</div>
 <div id="content">
@@ -26,6 +35,7 @@
 </ul>
 
 </div>
+<script src="/static/theme.js"></script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-64575479-1']);

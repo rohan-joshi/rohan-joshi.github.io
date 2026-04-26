@@ -1,8 +1,14 @@
-<html>
+<html data-theme="light">
 <head>
-  <link rel="stylesheet" href="/static/style.css">
   <meta charset="utf-8">
   <title>Building a Fundamentals-Driven Stock Screener · Rohan Joshi</title>
+  <script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div id="menu">
@@ -13,6 +19,9 @@
   <li><a href="/projects.html">Projects</a></li>
   <li><a href="/photos.html">Photos</a></li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 </div>
 <div id="left">&nbsp;</div>
 <div id="content">
@@ -34,6 +43,9 @@
   <li><b>Missing context</b>: 5% yield means nothing if diluting 10% annually</li>
   <li><b>No confidence weighting</b>: All metrics treated equally regardless of data quality</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <h2>Architecture</h2>
 
@@ -100,6 +112,9 @@ class IntrinsicValueResult:
   <li>Negative FCF in 2+ years</li>
   <li>Terminal value &gt;90% of total</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <p>Final value = confidence-weighted avg of DCF and relative (sector median P/E × EPS).</p>
 
@@ -112,6 +127,9 @@ class IntrinsicValueResult:
   <li><b>Capital allocation (20%)</b>: Buybacks, dividends, debt paydown, insider buying</li>
   <li><b>Catalysts (15%)</b>: Earnings beats, insider clusters</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <p>But the score alone isn't enough. Veto thresholds filter out:</p>
 
@@ -139,6 +157,9 @@ class Thresholds:
   <li><code>dividends</code>: payment history, ex-dates, specials</li>
   <li><code>buyback_programs</code>: authorized amounts</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <p>Insider clusters (multiple execs buying in short window) weighted higher than single purchases.</p>
 
@@ -150,8 +171,12 @@ class Thresholds:
   <li><b>TimescaleDB worth it for financial data</b>. Hypertables, auto-partitioning, time-aware query planning.</li>
   <li><b>Veto logic > scoring</b>. A stock failing on <code>dilution</code> + <code>negative_momentum</code> is different from one failing on <code>liquidity</code>.</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 </div>
+<script src="/static/theme.js"></script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-64575479-1']);

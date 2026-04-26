@@ -1,8 +1,14 @@
-<html>
+<html data-theme="light">
 <head>
-  <link rel="stylesheet" href="/static/style.css">
   <meta charset="utf-8">
   <title>Building a Stock Analysis Agent with LangChain · Rohan Joshi</title>
+  <script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div id="menu">
@@ -13,6 +19,9 @@
   <li><a href="/projects.html">Projects</a></li>
   <li><a href="/photos.html">Photos</a></li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 </div>
 <div id="left">&nbsp;</div>
 <div id="content">
@@ -91,6 +100,9 @@ chain = (
   <li><b>Cites numbers</b>: Are there dollar signs and percentages? (Surprisingly often, no)</li>
   <li><b>Hallucination detection</b>: This one matters most</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <p>The hallucination evaluator compares numbers in the output against numbers in the input. If Claude says "market cap of $2.8T" but the input said $2.5T, that's a flag.</p>
 
@@ -151,6 +163,7 @@ Risk Factors: Elevated P/E ratio, AI spending concentration risk
 <p>The hallucination evaluator is crude. It just looks for number matches within 5% tolerance. A better version would understand that "nearly $3T" matching "$2.8T" is probably fine, but "$180 price target" appearing from nowhere is not.</p>
 
 </div>
+<script src="/static/theme.js"></script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-64575479-1']);

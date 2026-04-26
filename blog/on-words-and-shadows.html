@@ -1,8 +1,14 @@
-<html>
+<html data-theme="light">
 <head>
-  <link rel="stylesheet" href="/static/style.css">
   <meta charset="utf-8">
   <title>On Words and Shadows · Rohan Joshi</title>
+  <script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div id="menu">
@@ -13,6 +19,9 @@
   <li><a href="/projects.html">Projects</a></li>
   <li><a href="/photos.html">Photos</a></li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 </div>
 <div id="left">&nbsp;</div>
 <div id="content">
@@ -41,6 +50,7 @@
 <p>So, how do we live with this? My theory is that the goal - whether in writing, in coding, or in living - is to get closer to the thing itself while still using words. We have to accept the imperfection of the medium but refuse to settle for the blur. We must try to write in a way that makes the shadow on the wall shimmer like it's almost real. To pay attention so carefully to the world that the name becomes transparent and what remains is just the rose, smelling as sweet as it ever did, whether or not you call it anything at all.</p>
 
 </div>
+<script src="/static/theme.js"></script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-64575479-1']);

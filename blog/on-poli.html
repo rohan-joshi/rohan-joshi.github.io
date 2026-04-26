@@ -1,8 +1,14 @@
-<html>
+<html data-theme="light">
 <head>
-  <link rel="stylesheet" href="/static/style.css">
   <meta charset="utf-8">
   <title>On Poli · Rohan Joshi</title>
+  <script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+  </script>
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div id="menu">
@@ -13,6 +19,9 @@
   <li><a href="/projects.html">Projects</a></li>
   <li><a href="/photos.html">Photos</a></li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 </div>
 <div id="left">&nbsp;</div>
 <div id="content">
@@ -29,17 +38,24 @@
   <li>A spectacular poli maker</li>
   <li>Spectacularly self-critical of everything she makes</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <p>So much so that in my transcription of her recipe — performed as she taught me to make polis for the first time — I write:</p>
 <ul>
   <li>"For maximum authenticity, it is suggested that you defer any compliments by responding that "it's too dry", or "I should have added more water," or "I should have added more atta (flour)," etc. etc."</li>
 </ul>
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="theme-icon">☾</span>
+</button>
 
 <p>Of course, Aaji's poli are invariably perfect.</p>
 
 <p>And so, years later, as I take yet another drab poli off the pan (tawas are ideal, more convex), I find myself yearning for perfection lost (the poli yes, but really the person), comforted in some measure by the sense of her presence, lingering like the smell of the tawa deep into the evening.</p>
 
 </div>
+<script src="/static/theme.js"></script>
 <script type="text/javascript">
   var _gaq = _gaq || [];
   _gaq.push(['_setAccount', 'UA-64575479-1']);
